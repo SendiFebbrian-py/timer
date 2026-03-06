@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pomodoro 3 Jam</title>
+
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -16,14 +17,18 @@
         color: white;
         text-align: center;
       }
+
       #timer {
-        font-size: 72px;
+        font-size: 80px;
         margin: 20px;
+        font-weight: bold;
       }
+
       #status {
         font-size: 28px;
         margin-bottom: 20px;
       }
+
       button {
         font-size: 18px;
         padding: 12px 25px;
@@ -31,25 +36,59 @@
         border: none;
         border-radius: 8px;
         cursor: pointer;
+        background: #2563eb;
+        color: white;
+      }
+
+      button:hover {
+        background: #1d4ed8;
+      }
+
+      .controls {
+        margin-top: 10px;
       }
     </style>
   </head>
+
   <body>
     <h1>Semangat Belajar</h1>
+
     <div id="status">Tekan Start</div>
     <div id="timer">25:00</div>
 
-    <button onclick="startTimer()">Start</button>
-    <button onclick="resetTimer()">Reset</button>
+    <div class="controls">
+      <button onclick="startTimer()">Start</button>
+      <button onclick="pauseTimer()">Pause</button>
+      <button onclick="resumeTimer()">Resume</button>
+      <button onclick="resetTimer()">Reset</button>
+    </div>
+
+    <audio id="alarm">
+      <source
+        src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"
+      />
+    </audio>
 
     <script>
       let studyTime = 25 * 60;
-      let breakTime = 5 * 60;
+      let shortBreak = 5 * 60;
+      let longBreak = 30 * 60;
+
       let cycles = 6;
       let currentCycle = 1;
+
       let isStudy = true;
       let timeLeft = studyTime;
+
       let timer = null;
+      let isPaused = false;
+
+      const alarm = document.getElementById("alarm");
+
+      function playAlarm() {
+        alarm.currentTime = 0;
+        alarm.play();
+      }
 
       function speak(text) {
         let speech = new SpeechSynthesisUtterance(text);
@@ -63,33 +102,60 @@
           .toString()
           .padStart(2, "0");
         let s = (timeLeft % 60).toString().padStart(2, "0");
+
         document.getElementById("timer").innerText = m + ":" + s;
-        document.getElementById("status").innerText =
-          (isStudy ? "Belajar sesi " : "Istirahat ") + currentCycle + " dari 6";
+
+        if (isStudy) {
+          document.getElementById("status").innerText =
+            "Belajar sesi " + currentCycle + " dari 6";
+        } else {
+          if (currentCycle === 6) {
+            document.getElementById("status").innerText =
+              "Istirahat panjang 30 menit";
+          } else {
+            document.getElementById("status").innerText = "Istirahat 5 menit";
+          }
+        }
       }
 
       function startTimer() {
         if (timer) return;
 
         timer = setInterval(() => {
+          if (isPaused) return;
+
           timeLeft--;
+
           updateDisplay();
 
           if (timeLeft <= 0) {
-            if (isStudy) {
-              speak("Waktu belajar selesai. waktunya istirahat.");
-              isStudy = false;
-              timeLeft = breakTime;
-            } else {
-              speak("Waktu istirahat habis. Kembali belajar.");
-              isStudy = true;
-              currentCycle++;
+            playAlarm();
 
-              if (currentCycle > cycles) {
-                speak("Sesi belajar tiga jam selesai. Kerja bagus.");
+            if (isStudy) {
+              if (currentCycle === 6) {
+                speak(
+                  "Sesi belajar terakhir selesai. Sekarang istirahat panjang tiga puluh menit.",
+                );
+                timeLeft = longBreak;
+              } else {
+                speak(
+                  "Waktu belajar selesai. Sekarang waktunya istirahat lima menit.",
+                );
+                timeLeft = shortBreak;
+              }
+
+              isStudy = false;
+            } else {
+              if (currentCycle === 6) {
+                speak("Sesi pomodoro tiga jam selesai. Kerja bagus.");
                 resetTimer();
                 return;
               }
+
+              speak("Waktu istirahat habis. Kembali belajar.");
+
+              isStudy = true;
+              currentCycle++;
 
               timeLeft = studyTime;
             }
@@ -97,12 +163,28 @@
         }, 1000);
       }
 
+      function pauseTimer() {
+        isPaused = true;
+
+        document.getElementById("status").innerText = "Timer dijeda";
+      }
+
+      function resumeTimer() {
+        isPaused = false;
+
+        updateDisplay();
+      }
+
       function resetTimer() {
         clearInterval(timer);
+
         timer = null;
+
         currentCycle = 1;
         isStudy = true;
         timeLeft = studyTime;
+        isPaused = false;
+
         updateDisplay();
       }
 
