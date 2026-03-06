@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pomodoro 3 Jam</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background: #0f172a;
+        color: white;
+        text-align: center;
+      }
+      #timer {
+        font-size: 72px;
+        margin: 20px;
+      }
+      #status {
+        font-size: 28px;
+        margin-bottom: 20px;
+      }
+      button {
+        font-size: 18px;
+        padding: 12px 25px;
+        margin: 8px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Semangat Belajar</h1>
+    <div id="status">Tekan Start</div>
+    <div id="timer">25:00</div>
+
+    <button onclick="startTimer()">Start</button>
+    <button onclick="resetTimer()">Reset</button>
+
+    <script>
+      let studyTime = 25 * 60;
+      let breakTime = 5 * 60;
+      let cycles = 6;
+      let currentCycle = 1;
+      let isStudy = true;
+      let timeLeft = studyTime;
+      let timer = null;
+
+      function speak(text) {
+        let speech = new SpeechSynthesisUtterance(text);
+        speech.lang = "id-ID";
+        speech.rate = 1;
+        speechSynthesis.speak(speech);
+      }
+
+      function updateDisplay() {
+        let m = Math.floor(timeLeft / 60)
+          .toString()
+          .padStart(2, "0");
+        let s = (timeLeft % 60).toString().padStart(2, "0");
+        document.getElementById("timer").innerText = m + ":" + s;
+        document.getElementById("status").innerText =
+          (isStudy ? "Belajar sesi " : "Istirahat ") + currentCycle + " dari 6";
+      }
+
+      function startTimer() {
+        if (timer) return;
+
+        timer = setInterval(() => {
+          timeLeft--;
+          updateDisplay();
+
+          if (timeLeft <= 0) {
+            if (isStudy) {
+              speak("Waktu belajar selesai. waktunya istirahat.");
+              isStudy = false;
+              timeLeft = breakTime;
+            } else {
+              speak("Waktu istirahat habis. Kembali belajar.");
+              isStudy = true;
+              currentCycle++;
+
+              if (currentCycle > cycles) {
+                speak("Sesi belajar tiga jam selesai. Kerja bagus.");
+                resetTimer();
+                return;
+              }
+
+              timeLeft = studyTime;
+            }
+          }
+        }, 1000);
+      }
+
+      function resetTimer() {
+        clearInterval(timer);
+        timer = null;
+        currentCycle = 1;
+        isStudy = true;
+        timeLeft = studyTime;
+        updateDisplay();
+      }
+
+      updateDisplay();
+    </script>
+  </body>
+</html>
